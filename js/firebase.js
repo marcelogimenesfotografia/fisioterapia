@@ -3,7 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// !!! IMPORTANTE: SUBSTITUA COM AS SUAS CREDENCIAIS DO FIREBASE !!!
+// !!! SUBSTITUA COM SUAS CREDENCIAIS DO FIREBASE !!!
 const firebaseConfig = {
     apiKey: "AIzaSyB5DK7R3WGtKIUy_fMt8iNKBtz9wgdBxVs",
     authDomain: "fisioterapia-cee9d.firebaseapp.com",
@@ -13,7 +13,6 @@ const firebaseConfig = {
     appId: "1:551406348997:web:7b21e0d90ebf4969955eac"
 };
 
-// Inicializa os serviços
 export const firebaseApp = initializeApp(firebaseConfig);
 export const auth = getAuth(firebaseApp);
 export const db = getFirestore(firebaseApp);

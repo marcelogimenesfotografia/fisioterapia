@@ -2,34 +2,74 @@
 import { collection, onSnapshot, addDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { db } from '../firebase.js';
 
-let unsubscribeFromPatients;
+const BLANK_FORM = { id: null, name: '', phone: '' };
 
-export function initializePatientsStore(appContext) {
-    appContext.$watch('clinic.id', (clinicId) => {
-        if (unsubscribeFromPatients) unsubscribeFromPatients(); // Cancela listener anterior
+export const patientStore = () => ({
+    all: [],
+    selectedId: null,
+    selected: null,
+    _app: null,
+    _unsubscribe: null,
 
-        if (clinicId) {
-            const patientsRef = collection(db, 'clinics', clinicId, 'patients');
-            unsubscribeFromPatients = onSnapshot(patientsRef, (snapshot) => {
-                const patientList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                appContext.patients.all = patientList.sort((a,b) => a.name.localeCompare(b.name));
-            });
-        } else {
-            appContext.patients.all = [];
-        }
-    });
-}
+    init(appContext) {
+        this._app = appContext;
+        // Observa mudanças no ID da clínica
+        this._app.$watch('clinic.id', (clinicId) => {
+            if (this._unsubscribe) this._unsubscribe();
 
-// Funções de Ação (Create, Update)
-export const patientActions = {
-    add: (clinicId, patientData) => {
-        const patientsRef = collection(db, 'clinics', clinicId, 'patients');
-        return addDoc(patientsRef, patientData);
+            if (clinicId) {
+                const patientsRef = collection(db, 'clinics', clinicId, 'patients');
+                this._unsubscribe = onSnapshot(patientsRef, (snapshot) => {
+                    this.all = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                });
+            } else {
+                this.all = [];
+            }
+        });
     },
-    update: (clinicId, patientId, patientData) => {
-        const patientRef = doc(db, 'clinics', clinicId, 'patients', patientId);
-        // Remove 'id' do objeto antes de salvar para não duplicar
-        const { id, ...dataToSave } = patientData; 
-        return updateDoc(patientRef, dataToSave);
+
+    // Ações
+    openPatientModal(patient = null) {
+        if (patient) {
+            this._app.modals.patient.isEditing = true;
+            // Clona o objeto para o formulário
+            this._app.modals.patient.form = { ...patient };
+        } else {
+            this._app.modals.patient.isEditing = false;
+            this._app.modals.patient.form = { ...BLANK_FORM };
+        }
+        this._app.modals.patient.isOpen = true;
+    },
+
+    async savePatient() {
+        this._app.isLoading = true;
+        const clinicId = this._app.clinic.id;
+        const formData = this._app.modals.patient.form;
+        
+        try {
+            if (this._app.modals.patient.isEditing) {
+                const patientRef = doc(db, 'clinics', clinicId, 'patients', formData.id);
+                const { id, ...dataToSave } = formData;
+                await updateDoc(patientRef, dataToSave);
+            } else {
+                const { id, ...dataToSave } = formData;
+                await addDoc(collection(db, 'clinics', clinicId, 'patients'), dataToSave);
+            }
+            this._app.modals.patient.isOpen = false;
+        } catch (e) {
+            console.error(e);
+        } finally {
+            this._app.isLoading = false;
+        }
+    },
+
+    viewPatient(id) {
+        this.selectedId = id;
+        this.selected = this.all.find(p => p.id === id) || null;
+    },
+    
+    backToList() {
+        this.selectedId = null;
+        this.selected = null;
     }
-};
+});
