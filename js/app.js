@@ -3,7 +3,10 @@ import { initializeAuth } from './auth.js';
 import { initializeClinicStore } from './stores/clinicStore.js';
 import { initializePatientsStore, patientActions } from './stores/patientStore.js';
 
+// Este evento garante que nosso código só rode DEPOIS que o Alpine.js estiver pronto.
 document.addEventListener('alpine:init', () => {
+    // Registra um "dado global" chamado 'app'.
+    // No HTML, nós chamamos isso com x-data="app".
     Alpine.data('app', () => ({
         // --- ESTADO GLOBAL ---
         isLoading: true,
@@ -47,14 +50,12 @@ document.addEventListener('alpine:init', () => {
                 this.openModal(event.detail.type, event.detail.data);
             });
             
-            // Simula o fim do carregamento inicial após um breve momento
             setTimeout(() => this.isLoading = false, 500);
         },
         
         // --- MÉTODOS GLOBAIS ---
         openModal(type, data = {}) {
             this.modal.type = type;
-            // Clona o objeto para evitar edições acidentais no estado original
             this.modal.data = JSON.parse(JSON.stringify(data));
         },
         closeModal() {
@@ -66,7 +67,6 @@ document.addEventListener('alpine:init', () => {
         async savePatient() {
             this.isLoading = true;
             try {
-                // As funções de ação vêm do 'patientStore'
                 if (this.modal.data.id) {
                     await patientActions.update(this.clinic.id, this.modal.data.id, this.modal.data);
                 } else {
@@ -75,35 +75,36 @@ document.addEventListener('alpine:init', () => {
                 this.closeModal();
             } catch (e) {
                 console.error("Erro ao salvar paciente:", e);
-                // Adicionar feedback de erro para o usuário aqui
             } finally {
                 this.isLoading = false;
             }
         },
     }));
-    
-    // Escopo de dados específico para a página de pacientes
-    Alpine.data('patientsScope', () => ({
-        searchTerm: '',
-        selectedPatientId: null,
-        selectedPatient: null,
-        
-        get filteredPatients() {
-            if (!this.searchTerm.trim()) return this.$store.app.patients.all;
-            return this.$store.app.patients.all.filter(p =>
-                p.name.toLowerCase().includes(this.searchTerm.toLowerCase())
-            );
-        },
-        
-        viewPatient(id) {
-            this.selectedPatient = this.$store.app.patients.all.find(p => p.id === id) || null;
-            this.selectedPatientId = id;
-            // Futuro: Buscar histórico de evoluções aqui...
-        },
 
-        backToList() {
-            this.selectedPatientId = null;
-            this.selectedPatient = null;
+    // Registra um escopo de dados separado para a página de pacientes
+    Alpine.data('patientsScope', function () {
+        return {
+            searchTerm: '',
+            selectedPatientId: null,
+            selectedPatient: null,
+            
+            get filteredPatients() {
+                // Acessa o estado global do app através de $store.app
+                if (!this.searchTerm.trim()) return this.$store.app.patients.all;
+                return this.$store.app.patients.all.filter(p =>
+                    p.name.toLowerCase().includes(this.searchTerm.toLowerCase())
+                );
+            },
+            
+            viewPatient(id) {
+                this.selectedPatient = this.$store.app.patients.all.find(p => p.id === id) || null;
+                this.selectedPatientId = id;
+            },
+
+            backToList() {
+                this.selectedPatientId = null;
+                this.selectedPatient = null;
+            }
         }
-    }));
+    });
 });
