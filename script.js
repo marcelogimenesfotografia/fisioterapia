@@ -1,0 +1,1 @@
+// No inline JS found to extract.
