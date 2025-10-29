@@ -9,7 +9,7 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         .modal-backdrop { background-color: rgba(0,0,0,0.5); }
-        .sidebar-link { display: flex; align-items: center; padding: 0.75rem 1rem; border-radius: 0.5rem; transition: background-color 0.2s; color: #D1D5DB; }
+        .sidebar-link { display: flex; align-items: center; padding: 0.75rem 1rem; border-radius: 0.5rem; transition: background-color 0.2s; color: #D1D5DB; cursor: pointer; }
         .sidebar-link:hover { background-color: #374151; }
         .sidebar-link.active { background-color: #4B5563; color: #FFFFFF; font-weight: 600; }
         .loader { border-top-color: #3498db; }
@@ -17,17 +17,14 @@
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-    <!-- Loading Overlay -->
     <div id="loading-overlay" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
         <div class="loader w-16 h-16 border-4 border-gray-200 rounded-full animate-spin"></div>
     </div>
 
-    <!-- ÁREA DE AUTENTICAÇÃO -->
     <div id="auth-view" class="h-screen flex items-center justify-center p-4 hidden">
-        <!-- TELA DE LOGIN -->
-        <div id="login-container" class="max-w-md w-full mx-auto">
+        <div class="max-w-md w-full mx-auto">
             <div class="bg-white p-8 rounded-lg shadow-lg">
-                <div class="text-center mb-8"><h1 class="text-3xl font-bold text-blue-600">FisioGestão</h1></div>
+                <h1 class="text-3xl font-bold text-blue-600 text-center mb-8">FisioGestão</h1>
                 <form id="login-form">
                     <div class="space-y-4">
                         <input id="login-email" type="email" placeholder="Seu e-mail" class="w-full p-3 border rounded-lg" required>
@@ -40,16 +37,14 @@
         </div>
     </div>
 
-    <!-- PAINEL PRINCIPAL (DASHBOARD) -->
     <div id="dashboard-view" class="flex h-screen bg-gray-200 hidden">
-        <!-- MENU LATERAL -->
         <aside class="w-64 bg-gray-800 text-white flex-col flex-shrink-0 hidden md:flex">
             <div class="h-16 flex items-center justify-center text-xl font-bold border-b border-gray-700 px-4">
-                <span id="clinic-name-sidebar" class="truncate">FisioGestão</span>
+                <span id="clinic-name-sidebar" class="truncate">...</span>
             </div>
             <nav id="sidebar-nav" class="flex-1 p-4 space-y-2">
-                <a href="#" data-view="inicio" class="sidebar-link active">Início</a>
-                <a href="#" data-view="pacientes" class="sidebar-link">Pacientes</a>
+                <a data-view="inicio" class="sidebar-link active">Início</a>
+                <a data-view="pacientes" class="sidebar-link">Pacientes</a>
             </nav>
             <div class="p-4 border-t border-gray-700">
                 <p id="user-email-sidebar" class="font-mono text-sm break-words"></p>
@@ -57,68 +52,35 @@
             </div>
         </aside>
 
-        <!-- CONTEÚDO PRINCIPAL -->
         <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
-            <!-- PÁGINA INÍCIO -->
-            <div id="page-inicio" class="page-content">
-                <h2 class="text-3xl font-semibold">Início</h2>
-            </div>
-            <!-- PÁGINA PACIENTES -->
+            <div id="page-inicio" class="page-content"><h2 class="text-3xl font-semibold">Início</h2></div>
             <div id="page-pacientes" class="page-content hidden">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-semibold">Pacientes</h2>
                     <button id="add-patient-btn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg">+ Adicionar</button>
                 </div>
-                <div id="patients-list-container" class="bg-white rounded-lg shadow-lg divide-y">
-                    <!-- A lista de pacientes será inserida aqui pelo JS -->
-                </div>
+                <div id="patients-list-container" class="bg-white rounded-lg shadow-lg divide-y"></div>
             </div>
         </main>
     </div>
 
-    <!-- MODAIS -->
     <div id="patient-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-3xl">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg">
             <form id="patient-form">
                 <input type="hidden" id="patient-id">
-                <h2 id="patient-modal-title" class="p-6 border-b text-2xl font-bold">Adicionar Paciente</h2>
+                <h2 id="patient-modal-title" class="p-6 border-b text-2xl font-bold"></h2>
                 <div class="p-6 space-y-4">
                     <input id="patient-name" type="text" placeholder="Nome Completo" class="w-full p-2 border rounded" required>
                     <input id="patient-phone" type="tel" placeholder="Telefone" class="w-full p-2 border rounded">
                 </div>
                 <div class="p-6 bg-gray-50 flex justify-end space-x-4">
-                    <button type="button" id="cancel-patient-modal-btn" class="bg-gray-200 font-semibold py-2 px-6 rounded-lg">Cancelar</button>
+                    <button type="button" class="cancel-modal-btn bg-gray-200 font-semibold py-2 px-6 rounded-lg">Cancelar</button>
                     <button type="submit" class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg">Salvar</button>
                 </div>
             </form>
         </div>
     </div>
     
-    <!-- O PONTO DE ENTRADA DA APLICAÇÃO -->
     <script src="./js/main.js" type="module"></script>
 </body>
-</html>```
-
----
-
-#### 2. Arquivo: `js/firebase.js` (A Configuração)
-
-```javascript
-// js/firebase.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-// SUAS CREDENCIAIS AQUI
-const firebaseConfig = {
-    apiKey: "AIzaSyB5DK7R3WGtKIUy_fMt8iNKBtz9wgdBxVs",
-    authDomain: "fisioterapia-cee9d.firebaseapp.com",
-    projectId: "fisioterapia-cee9d",
-    storageBucket: "fisioterapia-cee9d.appspot.com",
-    messagingSenderId: "551406348997",
-    appId: "1:551406348997:web:7b21e0d90ebf4969955eac"
-};
-
-export const firebaseApp = initializeApp(firebaseConfig);
-export const auth = getAuth(firebaseApp);
-export const db = getFirestore(firebaseApp);
+</html>

@@ -1,33 +1,56 @@
 // js/main.js
-import { initializeAuth, setupLoginForm, setupLogoutButton, getCurrentUser } from './auth.js';
-import { showView, setupNavigation, updateUserInfo } from './ui.js';
-import { listenToPatients, setupPatientActions } from './patientStore.js';
+import { firebase, db } from './firebase.js';
+import { authModule } from './auth.js';
+import { ui } from './ui.js';
+import { patientsModule } from './patients.js';
 
 // Função executada quando o usuário está logado
-function onLogin(user) {
+async function handleLogin(user) {
+    ui.showLoading();
     console.log('Usuário logado:', user.email);
-    // !! IMPORTANTE: Substitua pela lógica real para obter o ID da clínica !!
-    const clinicId = "Cg071Ld6G4aU05E1kI3H"; 
-    
-    updateUserInfo(user);
-    listenToPatients(clinicId);
-    showView('dashboard');
+
+    // LÓGICA PARA BUSCAR O clinicId - ESSA PARTE É CRUCIAL
+    // Vamos buscar o documento do usuário para encontrar o clinicId associado.
+    const userDocRef = firebase.doc(db, 'users', user.uid);
+    const userDoc = await firebase.getDoc(userDocRef);
+
+    if (userDoc.exists() && userDoc.data().clinicId) {
+        const clinicId = userDoc.data().clinicId;
+        
+        // Agora, buscamos os dados da clínica
+        const clinicDocRef = firebase.doc(db, 'clinics', clinicId);
+        const clinicDoc = await firebase.getDoc(clinicDocRef);
+        const clinicData = clinicDoc.exists() ? clinicDoc.data() : { name: 'Clínica não encontrada' };
+        
+        // Inicia os módulos que dependem de dados
+        patientsModule.startListening(clinicId);
+        ui.updateUserInfo(user, clinicData);
+        ui.showView('dashboard');
+    } else {
+        // Se o usuário não tem um clinicId, não deixamos ele entrar.
+        console.error("Usuário não está associado a nenhuma clínica!");
+        authModule.handleLogout(); // Desloga o usuário
+        alert("Sua conta não está associada a nenhuma clínica. Contate o suporte.");
+    }
+    ui.hideLoading();
 }
 
 // Função executada quando o usuário desloga
-function onLogout() {
+function handleLogout() {
     console.log('Usuário deslogado.');
-    showView('auth');
+    patientsModule.stopListening(); // Para de ouvir os dados
+    ui.showView('auth');
 }
 
 // --- PONTO DE PARTIDA DA APLICAÇÃO ---
-document.addEventListener('DOMContentLoaded', () => {
-    // Configura os ouvintes de eventos
-    setupLoginForm();
-    setupLogoutButton();
-    setupNavigation();
-    setupPatientActions();
+function main() {
+    // Inicia os módulos que não dependem de dados
+    ui.setupNavigation();
+    patientsModule.init();
+    
+    // Inicia a autenticação, passando as funções de callback
+    authModule.init(handleLogin, handleLogout);
+}
 
-    // Inicia o processo de autenticação
-    initializeAuth(onLogin, onLogout);
-});
+// Roda a função principal quando o DOM estiver pronto
+document.addEventListener('DOMContentLoaded', main);
